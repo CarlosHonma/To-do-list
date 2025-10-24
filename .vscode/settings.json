@@ -1,0 +1,7 @@
+{
+    "python.defaultInterpreterPath": "/home/eitihonma/projects/to-do-list/.venv/bin/python",
+    "python.analysis.extraPaths": [
+        "./.venv/lib/python3.12/site-packages"
+    ],
+    "python.analysis.typeCheckingMode": "basic"
+}
