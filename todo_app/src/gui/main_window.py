@@ -1,5 +1,3 @@
-# todo_app/src/gui/main_window.py
-
 import customtkinter as ctk
 from typing import cast
 from src.models.task import Status, Task

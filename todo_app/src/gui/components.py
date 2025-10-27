@@ -1,5 +1,3 @@
-# todo_app/src/gui/components.py
-
 import customtkinter as ctk
 from src.models.task import Task, Priority, Status
 from src.gui.styles import AppTheme, ComponentStyles
