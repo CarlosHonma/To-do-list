@@ -5,8 +5,8 @@ from src.gui.styles import AppTheme, ComponentStyles
 
 class TaskCard(ctk.CTkFrame):
     """
-    Representa visualmente uma única tarefa.
-    Recebe callbacks para completar, editar e excluir.
+    Visually represents a single task.
+    Receives callbacks for completion, editing, and deletion.
     """
     def __init__(self, master, task: Task, on_complete, on_delete, on_edit, **kwargs):
         super().__init__(master, **ComponentStyles.get_task_card(), **kwargs)
@@ -17,10 +17,10 @@ class TaskCard(ctk.CTkFrame):
         self.create_widgets()
     
     def create_widgets(self):
-        # Configuração de grid: coluna 1 expande
+        # Grid configuration: it expands column 1
         self.grid_columnconfigure(1, weight=1)
         
-        # Checkbox de conclusão
+        # Conclusion checkbox
         self.checkbox = ctk.CTkCheckBox(
             self,
             text="",
@@ -30,12 +30,12 @@ class TaskCard(ctk.CTkFrame):
         )
         self.checkbox.grid(row=0, column=0, padx=10, pady=10, sticky="n")
         
-        # Frame de conteúdo (título e descrição)
+        # The content frame (title and description)
         self.content_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.content_frame.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
         self.content_frame.grid_columnconfigure(0, weight=1)
         
-        # Título
+        # Title
         # Use getattr to support Task implementations that may use different attribute names (e.g. 'name')
         self.title_label = ctk.CTkLabel(
             self.content_frame,
@@ -46,7 +46,7 @@ class TaskCard(ctk.CTkFrame):
         )
         self.title_label.grid(row=0, column=0, sticky="w", pady=(0,5))
         
-        # Descrição (opcional)
+        # Description (optional)
         desc = getattr(self.task, "description", None)
         if desc:
             self.desc_label = ctk.CTkLabel(
@@ -58,11 +58,11 @@ class TaskCard(ctk.CTkFrame):
             )
             self.desc_label.grid(row=1, column=0, sticky="w", pady=(0,5))
         
-        # Frame de ações (editar, excluir)
+        # Action frames (edit and delete)
         self.actions_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.actions_frame.grid(row=0, column=2, padx=10, pady=10)
         
-        # Botão editar
+        # Edit button
         self.edit_button = ctk.CTkButton(
             self.actions_frame,
             text="✏️",
@@ -72,7 +72,7 @@ class TaskCard(ctk.CTkFrame):
         )
         self.edit_button.pack(side="left", padx=2)
         
-        # Botão excluir
+        # Delete button
         self.delete_button = ctk.CTkButton(
             self.actions_frame,
             text="🗑️",
@@ -86,16 +86,16 @@ class TaskCard(ctk.CTkFrame):
     
     def toggle_complete(self):
         """
-        Alterna status da tarefa e atualiza visual.
-        Callback no controller faz persitência.
+        Toggles task status and updates the visuals.
+        Callback in the controller ensures persistence.
         """
         self.on_complete(self.task)
         self.update_appearance()
     
     def update_appearance(self):
         """
-        Ajusta cores e checkbox de acordo com status.
-        Tarefas concluídas aparecem esmaecidas.
+        Adjusts colors and checkboxes according to status.
+        Completed tasks appear dimmed.
         """
         # Support multiple Task shapes:
         # - Enum status attribute (Status.COMPLETED)
@@ -125,8 +125,8 @@ class TaskCard(ctk.CTkFrame):
 
 class AddTaskDialog(ctk.CTkToplevel):
     """
-    Janela modal para adicionar nova tarefa.
-    Recebe callback on_add_task(title, description, priority).
+    Modal window for adding a new task.
+    Receives the on_add_task(title, description, priority) callback.
     """
     def __init__(self, parent, on_add_task):
         super().__init__(parent)
@@ -172,12 +172,12 @@ class AddTaskDialog(ctk.CTkToplevel):
     
     def add_task(self):
         """
-        Lê valores dos campos, converte prioridade e chama callback.
-        Fecha o modal após adicionar.
+        Reads field values, converts priority, and calls a callback.
+        Closes the modal after adding.
         """
         title = self.title_entry.get().strip()
         if not title:
-            return  # Não adiciona título vazio
+            return  # Don't add empty title
         
         desc = self.desc_textbox.get("1.0", "end-1c").strip() or None
         prio_map = {"Baixa": Priority.LOW, "Média": Priority.MEDIUM, "Alta": Priority.HIGH}
