@@ -33,7 +33,7 @@ title: str
 description: Optional[str] = None
 priority: Priority = Priority.MEDIUM
 status: Status = Status.PENDING
-created_at: datetime = None
+created_at: Optional[datetime] = None
 completed_at: Optional[datetime] = None
 
 
