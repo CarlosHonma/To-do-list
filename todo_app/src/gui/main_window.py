@@ -8,22 +8,22 @@ from src.gui.styles import AppTheme, ComponentStyles
 
 class TodoApp(ctk.CTk):
     """
-    Janela principal da aplicação To-Do List.
-    Responsável por inicializar GUI, banco de dados e callbacks.
+    To-Do List application main window.
+    Responsible for initializing GUI, database and callbacks.
     """
     def __init__(self):
         super().__init__()
         AppTheme.configure_appearance()
         
-        self.db = TaskDatabase()  # Inicializa ou carrega tarefas
+        self.db = TaskDatabase()  # Initializes or loads tasks
         self.setup_window()
         self.create_widgets()
         self.refresh_tasks()
     
     def setup_window(self):
         """
-        Configurações básicas da janela:
-        título, tamanho, mínimo, ícone (opcional).
+        Basic window settings:
+        title, size, minimum, icon (optional).
         """
         self.title("Lista de Tarefas")
         self.geometry("800x600")
@@ -31,7 +31,7 @@ class TodoApp(ctk.CTk):
     
     def create_widgets(self):
         """
-        Cria containers principais: header, filtros e área de tarefas.
+        Creates main containers: header, filters and task area.
         """
         self.main_container = ctk.CTkFrame(self, corner_radius=0)
         self.main_container.pack(fill="both", expand=True, padx=20, pady=20)
@@ -75,7 +75,7 @@ class TodoApp(ctk.CTk):
     
     def _create_task_list(self):
         """
-        Área rolável que exibirá TaskCards ou mensagem de lista vazia.
+        Scrollable area that will display TaskCards or empty list message.
         """
         self.scrollable_frame = ctk.CTkScrollableFrame(
             self.main_container,
@@ -91,18 +91,18 @@ class TodoApp(ctk.CTk):
         )
     
     def show_add_dialog(self):
-        """Exibe o modal para adicionar nova tarefa."""
+        """Displays the modal to add a new task."""
         AddTaskDialog(self, self.add_task)
     
     def add_task(self, title, description, priority):
-        """Callback: adiciona tarefa no banco e atualiza lista."""
+        """Callback: adds a task to the database and updates the list."""
         self.db.add_task(title, description, priority)
         self.refresh_tasks()
     
     def complete_task(self, task):
         """
-        Callback: alterna status da tarefa e salva no banco.
-        Chamado pelo TaskCard.
+        Callback: switches task status and saves it to the database.
+        Called by TaskCard.
         """
         if task.status == Status.PENDING:
             task.mark_completed()
@@ -113,36 +113,36 @@ class TodoApp(ctk.CTk):
     
     def delete_task(self, task):
         """
-        Callback: confirma exclusão e remove do banco.
-        Usa modal simples de input para confirmação.
+        Callback: confirms deletion and removes from the database.
+        Uses simple input modal for confirmation.
         """
         dialog = ctk.CTkInputDialog(
             text=f"Excluir '{task.title}'?",
             title="Confirmar Exclusão"
         )
-        if dialog.get_input():  # Usuário confirmou
+        if dialog.get_input():  # User confirmed
             self.db.delete_task(task.id)
             self.refresh_tasks()
     
     def edit_task(self, task):
         """
-        Callback de edição (ainda não implementado).
-        Poderia reutilizar AddTaskDialog para editar campos.
+        Edit callback (not implemented yet).
+        Could reuse AddTaskDialog to edit fields.
         """
         pass
     
     def refresh_tasks(self):
         """
-        Atualiza a lista exibida:
-        - Limpa widgets existentes
-        - Filtra por status (Todas/Pendentes/Concluídas)
-        - Exibe TaskCard para cada tarefa ou mensagem vazia
+		Refreshes the displayed list:
+		- Clears existing widgets
+		- Filters by status (All/Pending/Completed)
+		- Displays TaskCard for each empty task or message
         """
-        # Limpa área de scroll
+        # Clean scroll area
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
         
-        # Seleciona tarefas conforme filtro
+        # Select tasks according to filter
         fv = self.filter_var.get()
         if fv == "Pendentes":
             tasks = self.db.get_tasks(Status.PENDING)
