@@ -43,10 +43,21 @@ class TodoApp(ctk.CTk):
     def _create_header(self):
         header = ctk.CTkFrame(self.main_container, fg_color="transparent")
         header.pack(fill="x", pady=(0,20))
-        
+        # Split emoji and title into separate labels so we can set an
+        # emoji-capable font for the emoji glyph and keep the UI font for text.
+        from src.gui.styles import emoji_font
+
+        emoji_lbl = ctk.CTkLabel(
+            header,
+            text="📋",
+            font=emoji_font(28, "normal"),
+            text_color=AppTheme.TEXT_PRIMARY
+        )
+        emoji_lbl.pack(side="left", padx=(0,8))
+
         ctk.CTkLabel(
             header,
-            text="📋 Minhas Tarefas",
+            text="Minhas Tarefas",
             font=("Segoe UI", 24, "bold"),
             text_color=AppTheme.TEXT_PRIMARY
         ).pack(side="left")
@@ -83,12 +94,6 @@ class TodoApp(ctk.CTk):
         )
         self.scrollable_frame.pack(fill="both", expand=True)
         
-        self.empty_label = ctk.CTkLabel(
-            self.scrollable_frame,
-            text="🎉 Nenhuma tarefa encontrada!\nClique em 'Nova Tarefa'.",
-            font=("Segoe UI", 14),
-            text_color=AppTheme.TEXT_MUTED
-        )
     
     def show_add_dialog(self):
         """Displays the modal to add a new task."""
@@ -150,11 +155,27 @@ class TodoApp(ctk.CTk):
             tasks = self.db.get_tasks(Status.COMPLETED)
         else:
             tasks = self.db.get_tasks()
-        
-        # Exibe
+
+        # If there are no tasks, show a composed empty message using an
+        # emoji-capable font for the emoji and the UI font for the text.
         if not tasks:
-            self.empty_label.pack(expand=True, pady=50)
-        else:
+            from src.gui.styles import emoji_font
+            empty_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="transparent")
+            empty_frame.pack(expand=True, pady=50)
+            emoji_lbl = ctk.CTkLabel(
+                empty_frame,
+                text="🎉",
+                font=emoji_font(28),
+                text_color=AppTheme.TEXT_MUTED,
+            )
+            emoji_lbl.pack(side="left", padx=(0,8))
+            ctk.CTkLabel(
+                empty_frame,
+                text="Nenhuma tarefa encontrada!\nClique em 'Nova Tarefa'.",
+                font=("Segoe UI", 14),
+                text_color=AppTheme.TEXT_MUTED,
+            ).pack(side="left")
+            return
             # Ensure each item is a Task-like object (some DB implementations may return dicts)
             def _to_task(obj):
                 from src.models.task import Task

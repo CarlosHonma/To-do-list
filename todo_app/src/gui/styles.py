@@ -1,4 +1,23 @@
 import customtkinter as ctk
+import tkinter as _tk
+from tkinter import font as _tkfont
+
+
+def _find_available_font(preferred):
+    """Return the first font family from `preferred` that exists on the system."""
+    try:
+        root = _tk.Tk()
+        root.withdraw()
+        families = set(_tkfont.families(root))
+        root.destroy()
+    except Exception:
+        # If tkinter fonts cannot be queried (headless), return None
+        return None
+    for name in preferred:
+        if name in families:
+            return name
+    return None
+
 
 class AppTheme:
     """It defines global styles and themes for the application."""
@@ -27,6 +46,23 @@ class AppTheme:
         """Dark and light mode configuration"""
         ctk.set_appearance_mode("dark")  # Modos: "dark", "light"
         ctk.set_default_color_theme("dark-blue")  # Temas: "blue", "dark-blue", "green"
+
+
+# Try to find an emoji-capable font available on the system. Common names:
+# Noto Color Emoji (Linux), Segoe UI Emoji (Windows), Apple Color Emoji (macOS)
+EMOJI_FONT_FAMILY = _find_available_font([
+    "Noto Color Emoji",
+    "Segoe UI Emoji",
+    "Apple Color Emoji",
+    "EmojiOne Color",
+])
+
+def emoji_font(size=14, weight="normal"):
+    """Return a font tuple suitable for emoji rendering; falls back to default font."""
+    if EMOJI_FONT_FAMILY:
+        return (EMOJI_FONT_FAMILY, size, weight)
+    # Fallback to a generic font tuple; platform will try fallback glyphs
+    return ("Segoe UI", size, weight)
   
 class ComponentStyles:
     """Returns standardized styles for GUI components."""

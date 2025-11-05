@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import tkinter as tk
 from src.models.task import Task, Priority, Status
 from src.gui.styles import AppTheme, ComponentStyles
 
@@ -73,10 +74,13 @@ class TaskCard(ctk.CTkFrame):
         self.edit_button.pack(side="left", padx=2)
         
         # Delete button
+        # Note: ComponentStyles.get_danger_button() already provides a 'height'
+        # key, so avoid passing 'height' here to prevent multiple values for
+        # the same keyword argument.
         self.delete_button = ctk.CTkButton(
             self.actions_frame,
             text="🗑️",
-            width=30, height=30,
+            width=30,
             command=lambda: self.on_delete(self.task),
             **ComponentStyles.get_danger_button()
         )
@@ -139,7 +143,21 @@ class AddTaskDialog(ctk.CTkToplevel):
         self.geometry("400x300")
         # Use the provided parent reference to avoid type-checker complaints about self.master
         self.transient(self.parent)
-        self.grab_set()
+        # Ensure the window is realized/visible before taking the grab. In some
+        # environments tkinter raises TclError: "grab failed: window not viewable"
+        # if grab_set is called too early. Attempt grab_set and if it fails,
+        # deiconify/update and retry.
+        try:
+            self.grab_set()
+        except tk.TclError:
+            try:
+                self.deiconify()
+                self.update_idletasks()
+                self.grab_set()
+            except Exception:
+                # If grabbing still fails, continue without modal grab to avoid
+                # crashing the whole app; dialog will still appear.
+                pass
     
     def create_widgets(self):
         frame = ctk.CTkFrame(self)
