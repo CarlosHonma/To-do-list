@@ -118,7 +118,27 @@ class TodoApp(ctk.CTk):
             task.mark_completed()
         else:
             task.mark_pending()
-        self.db.save_tasks()
+
+        # Persist the change: Task objects shown in the UI are not the same
+        # Python dicts stored inside TaskDatabase.tasks. Convert the Task
+        # instance back into the storage dict shape and update the DB so
+        # the change is durable and will be visible when reloading.
+        task_dict = {
+            "id": getattr(task, "id", None),
+            "title": getattr(task, "title", ""),
+            "description": getattr(task, "description", None),
+            "priority": getattr(getattr(task, "priority", None), "value", str(getattr(task, "priority", None))),
+            "status": getattr(getattr(task, "status", None), "value", str(getattr(task, "status", None))),
+            "created_at": getattr(getattr(task, "created_at", None), "isoformat", lambda: getattr(task, "created_at", None))(),
+            "completed_at": getattr(getattr(task, "completed_at", None), "isoformat", lambda: getattr(task, "completed_at", None))(),
+        }
+        try:
+            self.db.update_task(task_dict)
+        except Exception:
+            # Fallback: if update_task fails for any reason, ensure we at
+            # least save the in-memory tasks list (may be stale).
+            self.db.save_tasks()
+
         # Defer UI refresh to avoid destroying active widgets during their
         # own event handling (checkbox clicks, etc.). Use after(0,...)
         # to run the refresh once the current callbacks complete.
