@@ -111,7 +111,15 @@ class TaskDatabase:
     
     def _task_to_dict(self, task: dict) -> dict:
         """Convert task dict to dictionary (JSON serializable)."""
-        # tasks are stored as dicts already; return a shallow copy to avoid mutation
+        # If the task is a Task instance, use its `to_dict()` helper; otherwise
+        # return a shallow copy of the dict to avoid mutation of the stored object.
+        try:
+            # Import locally to avoid circular imports during module import time.
+            from src.models.task import Task
+            if isinstance(task, Task):
+                return task.to_dict()
+        except Exception:
+            pass
         return dict(task)
     
     
