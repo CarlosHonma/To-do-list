@@ -12,13 +12,23 @@ class TaskDatabase:
     	db_path: Path to the JSON file storing tasks.
      	tasks: In-memory list of tasks."""
       
-    def __init__(self, db_path: str = "tasks.json"):
-        """It starts the database and loads existing tasks from the JSON file.
-        
+    def __init__(self, db_path: str | None = None):
+        """Initialize the TaskDatabase and load tasks from disk.
+
+        If `db_path` is not provided, the database file `tasks.json` will be
+        created inside the `todo_app` package directory so the location is
+        independent from the current working directory used to run the app.
+
         Args:
-			db_path: Path to the JSON file storing tasks."""
-   
-        self.db_path = Path(db_path)
+            db_path: Optional path to the JSON file storing tasks.
+        """
+        if db_path:
+            self.db_path = Path(db_path)
+        else:
+            # Default to todo_app/tasks.json (package root) so running the app
+            # from different working directories uses the same data file.
+            pkg_root = Path(__file__).resolve().parent.parent.parent
+            self.db_path = pkg_root / "tasks.json"
         self.tasks = []
         self.load_tasks()
         

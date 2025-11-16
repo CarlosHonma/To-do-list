@@ -4,7 +4,7 @@ Run this file to start the application:
     python -m src.main
 """
 
-from src.gui.main_window import TodoApp
+from src.gui import TodoApp
 
 
 def main():

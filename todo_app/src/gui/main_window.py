@@ -1,6 +1,6 @@
 import customtkinter as ctk
 from typing import cast
-from src.models.task import Status, Task
+from src.models.task import Status, Task, Priority
 from src.utils.database import TaskDatabase
 from src.gui.components import TaskCard, AddTaskDialog
 from src.gui.styles import AppTheme, ComponentStyles
@@ -176,12 +176,68 @@ class TodoApp(ctk.CTk):
                 text_color=AppTheme.TEXT_MUTED,
             ).pack(side="left")
             return
-            # Ensure each item is a Task-like object (some DB implementations may return dicts)
-            def _to_task(obj):
+        # Ensure each item is a Task-like object (some DB implementations may return dicts)
+        def _to_task(obj):
                 from src.models.task import Task
                 if isinstance(obj, dict):
+                    # Normalize dict data into proper Task fields (convert
+                    # priority/status to Enum values and parse datetimes) before
+                    # constructing a Task instance.
                     try:
-                        return Task(**obj)
+                        data = dict(obj)
+                        # Priority: could be stored as int (value) or str
+                        p = data.get("priority")
+                        if p is None or p == "None":
+                            priority = None
+                        else:
+                            try:
+                                # try integer value
+                                priority = Priority(int(p))
+                            except Exception:
+                                # try name or string mapping
+                                try:
+                                    priority = Priority[p]
+                                except Exception:
+                                    priority = Priority.MEDIUM
+
+                        # Status: could be stored as value string (e.g. 'Pending')
+                        s = data.get("status")
+                        if s is None:
+                            status = Status.PENDING
+                        else:
+                            try:
+                                status = Status(s)
+                            except Exception:
+                                # try matching by name
+                                try:
+                                    status = Status[s]
+                                except Exception:
+                                    status = Status.PENDING
+
+                        # created_at may be an ISO string
+                        ca = data.get("created_at")
+                        if isinstance(ca, str):
+                            try:
+                                from datetime import datetime
+                                created_at = datetime.fromisoformat(ca)
+                            except Exception:
+                                created_at = None
+                        else:
+                            created_at = ca
+
+                        from uuid import uuid4
+                        id_val = data.get("id") or str(uuid4())
+                        title_val = data.get("title") or ""
+                        task_obj = Task(
+                            id=id_val,
+                            title=title_val,
+                            description=data.get("description"),
+                            priority=priority if priority is not None else Priority.MEDIUM,
+                            status=status,
+                            created_at=created_at,
+                            completed_at=data.get("completed_at"),
+                        )
+                        return task_obj
                     except Exception:
                         # Fallback: lightweight wrapper that exposes expected attributes and methods
                         class _TaskWrapper:
@@ -193,10 +249,11 @@ class TodoApp(ctk.CTk):
 
                             def mark_pending(self):
                                 self.status = Status.PENDING
+
                         return _TaskWrapper(obj)
                 return obj
-            task_objs = [cast(Task, _to_task(t)) for t in tasks]
-            for task in sorted(task_objs, key=lambda t: getattr(t, "created_at", 0), reverse=True):
+        task_objs = [cast(Task, _to_task(t)) for t in tasks]
+        for task in sorted(task_objs, key=lambda t: getattr(t, "created_at", 0), reverse=True):
                 TaskCard(
                     self.scrollable_frame,
                     task,
