@@ -99,14 +99,40 @@ class TodoApp(ctk.CTk):
         """Displays the modal to add a new task."""
         AddTaskDialog(self, self.add_task)
     
-    def add_task(self, title, description, priority):
-        """Callback: adds a task to the database and updates the list."""
-        self.db.add_task(title, description, priority)
-        # Schedule refresh after the current event loop iteration so we
-        # don't destroy widgets while callers (e.g. button handlers) are
-        # still running. This prevents 'invalid command name' TclError when
-        # widgets (like checkbox canvases) are destroyed during their own
-        # event callbacks.
+    def add_task(self, title, description, priority, task=None):
+        """Callback: adds a task or updates an existing task.
+
+        If `task` is None, a new task is created. If `task` is a Task
+        instance, its attributes are updated and the DB record is updated.
+        """
+        if task is None:
+            self.db.add_task(title, description, priority)
+        else:
+            # Update the existing Task instance and persist the change
+            try:
+                # update in-memory task object
+                task.title = title
+                task.description = description
+                task.priority = priority
+                # Build storage dict via Task.to_dict() if available
+                try:
+                    task_dict = task.to_dict()
+                except Exception:
+                    task_dict = {
+                        "id": getattr(task, "id", None),
+                        "title": title,
+                        "description": description,
+                        "priority": getattr(getattr(task, "priority", None), "value", str(getattr(task, "priority", None))),
+                        "status": getattr(getattr(task, "status", None), "value", str(getattr(task, "status", None))),
+                        "created_at": getattr(getattr(task, "created_at", None), "isoformat", lambda: getattr(task, "created_at", None))(),
+                        "completed_at": getattr(getattr(task, "completed_at", None), "isoformat", lambda: getattr(task, "completed_at", None))(),
+                    }
+                self.db.update_task(task_dict)
+            except Exception:
+                # Fall back to saving whatever is in-memory
+                self.db.save_tasks()
+
+        # Schedule UI refresh after current handlers complete
         self.after(0, self.refresh_tasks)
     
     def complete_task(self, task):
@@ -164,7 +190,8 @@ class TodoApp(ctk.CTk):
         Edit callback (not implemented yet).
         Could reuse AddTaskDialog to edit fields.
         """
-        pass
+        # Open the AddTaskDialog in edit mode, pass the task so fields are prefilled
+        AddTaskDialog(self, self.add_task, task=task)
     
     def refresh_tasks(self):
         """

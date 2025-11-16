@@ -132,10 +132,18 @@ class AddTaskDialog(ctk.CTkToplevel):
     Modal window for adding a new task.
     Receives the on_add_task(title, description, priority) callback.
     """
-    def __init__(self, parent, on_add_task):
+    def __init__(self, parent, on_add_task, task=None):
+        """Create the add/edit dialog.
+
+        Args:
+            parent: parent window
+            on_add_task: callback with signature (title, description, priority, task)
+            task: optional Task instance to edit
+        """
         super().__init__(parent)
         self.parent = parent
         self.on_add_task = on_add_task
+        self.task = task
         self.setup_window()
         self.create_widgets()
     def setup_window(self):
@@ -186,7 +194,35 @@ class AddTaskDialog(ctk.CTkToplevel):
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
         btn_frame.pack(fill="x")
         ctk.CTkButton(btn_frame, text="Cancelar", command=self.destroy, fg_color=AppTheme.SECONDARY_COLOR).pack(side="right", padx=(10,0))
-        ctk.CTkButton(btn_frame, text="Adicionar", command=self.add_task, **ComponentStyles.get_main_button()).pack(side="right")
+        action_text = "Salvar" if self.task is not None else "Adicionar"
+        ctk.CTkButton(btn_frame, text=action_text, command=self.add_task, **ComponentStyles.get_main_button()).pack(side="right")
+
+        # If editing an existing task, prefill fields
+        if self.task is not None:
+            try:
+                self.title_entry.insert(0, getattr(self.task, "title", ""))
+                desc = getattr(self.task, "description", None)
+                if desc:
+                    self.desc_textbox.insert("1.0", desc)
+                # map Priority to label
+                pr = getattr(self.task, "priority", None)
+                if pr is not None:
+                    # Priority may be an Enum or numeric; derive label
+                    try:
+                        from src.models.task import Priority
+                        if isinstance(pr, Priority):
+                            val = pr
+                        else:
+                            try:
+                                val = Priority(int(pr))
+                            except Exception:
+                                val = Priority.MEDIUM
+                        label_map = {Priority.LOW: "Baixa", Priority.MEDIUM: "Média", Priority.HIGH: "Alta"}
+                        self.priority_var.set(label_map.get(val, "Média"))
+                    except Exception:
+                        self.priority_var.set("Média")
+            except Exception:
+                pass
     
     def add_task(self):
         """
@@ -196,10 +232,14 @@ class AddTaskDialog(ctk.CTkToplevel):
         title = self.title_entry.get().strip()
         if not title:
             return  # Don't add empty title
-        
+
         desc = self.desc_textbox.get("1.0", "end-1c").strip() or None
         prio_map = {"Baixa": Priority.LOW, "Média": Priority.MEDIUM, "Alta": Priority.HIGH}
-        priority = prio_map[self.priority_var.get()]
-        
-        self.on_add_task(title, desc, priority)
-        self.destroy()
+        priority = prio_map.get(self.priority_var.get(), Priority.MEDIUM)
+
+        # Pass the original task object (or None) so the caller can update
+        # an existing task instead of creating a new one.
+        try:
+            self.on_add_task(title, desc, priority, self.task)
+        finally:
+            self.destroy()
