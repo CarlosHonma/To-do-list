@@ -102,7 +102,12 @@ class TodoApp(ctk.CTk):
     def add_task(self, title, description, priority):
         """Callback: adds a task to the database and updates the list."""
         self.db.add_task(title, description, priority)
-        self.refresh_tasks()
+        # Schedule refresh after the current event loop iteration so we
+        # don't destroy widgets while callers (e.g. button handlers) are
+        # still running. This prevents 'invalid command name' TclError when
+        # widgets (like checkbox canvases) are destroyed during their own
+        # event callbacks.
+        self.after(0, self.refresh_tasks)
     
     def complete_task(self, task):
         """
@@ -114,7 +119,10 @@ class TodoApp(ctk.CTk):
         else:
             task.mark_pending()
         self.db.save_tasks()
-        self.refresh_tasks()
+        # Defer UI refresh to avoid destroying active widgets during their
+        # own event handling (checkbox clicks, etc.). Use after(0,...)
+        # to run the refresh once the current callbacks complete.
+        self.after(0, self.refresh_tasks)
     
     def delete_task(self, task):
         """
@@ -127,7 +135,9 @@ class TodoApp(ctk.CTk):
         )
         if dialog.get_input():  # User confirmed
             self.db.delete_task(task.id)
-            self.refresh_tasks()
+            # As above, defer refresh to avoid interfering with widget
+            # callbacks that may still be executing on the event loop.
+            self.after(0, self.refresh_tasks)
     
     def edit_task(self, task):
         """
